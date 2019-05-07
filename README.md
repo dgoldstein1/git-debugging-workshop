@@ -7,7 +7,7 @@ This repo is a hands-on tutorial to become troubleshooting and debugging with `g
 1. [Hands On Learning](#hands-on-learning)
 	1. [Reverting A Pull Request](#reverting-a-pull-request)
 	2. [Finding A Bad Commit](#finding-a-bad-commit)
-	3. [Finding Issues Merging Into Master](#finding-issues-merging-into-master)
+	3. [Updating A Stale Branch](#updating-a-stale-branch)
 1. [Authors](#authors)
 1. [License](#license)
 
@@ -244,10 +244,33 @@ bisect run success
 
 ```
 
-We end up with the same result-- that the bug originates from `commit 4`. If you can imagine, `git bisect run` is very useful for finding small issues in large projects when you might be looking through 1000+ commits.
+We end up with the same result-- that the bug originates from `commit 4`. As you can see, `git bisect run` saves more and more time as the number of commits increases. For instance, debugging 1000 commits takes only 7 maximum steps with git bisect (`ciel(ln(1000)) = 7`)
 
-### Finding Issues Merging Into Master
+### Updating a Stale Branch
 
+Let's turn to a new scenario. Say you're working on a new algorithm refactor but you get transferred to another project for a few months to help with a big release. When you come back, the code you were working in has completely changed and your branch is stale! This is now the git tree:
+
+![stale-branch-git-tree](images/stale-branch-git-tree.png)
+
+Take a minute to look through this diagram and think about how you would update your branch in the *wild*. 
+
+The two commands git gives us to update branches `git rebase` and `git merge`. Both of these approaches will allow us to update our `algorithm-refactor` branch. Let's try both of these approaches to see the costs and benefits of each.
+
+Start by cloning the repository:
+
+```sh
+TODO: CLONE REPO
+```
+
+#### Merge
+
+According to `git --help`, the `git merge` "Join[s] two or more development histories together." In terms of our scenario, merging master into our branch would make a new commit with all the changes necessary to incorporate changes from master so that merging into master will be clean (i.e. three way merge):
+
+![stale-branch-git-tree](images/stale-branch-mergin.png)
+
+
+
+#### Rebase
 
 ## Authors
 
