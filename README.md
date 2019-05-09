@@ -295,6 +295,31 @@ We're done! Run `git log alorithm-refactor` and git log origin/algorithm-refacto
 
 phew! A lot goes on behind the `git merge` command! In comparison `git rebase` is simpler but perhaps less elegant. Instead of fancy git SHA parsing and making intermediate commits, `git rebase` "Reappl[ies] commits on top of another base tip ". For our scenario, that means taking all our commits and dropping them on top of `master` like so:
 
+![stale-branch-rebase](images/stale-branch-rebase.png)
+
+As you can see commit 2 => the most recent commit became our 'base' ontop of the youngest common ancestory. Then our commits were reapplied. Let's try this locally:
+
+First let's reset our algorithm branch to how it was before we did our merge above.
+```sh
+$ git checkout algorithm-refactor
+$ git reset --hard origin/algorithm-refactor
+
+```
+Now let's try rebasing instead of merging.
+```sh
+$ git checkout algorithm-refactor
+$ git rebase master
+# resolve conflicts, if you want
+$ git add -A && git rebase --continue
+# resolve conflicts, if you want
+$ git add -A && git rebase --continue
+Applying: rewrite comments
+```
+
+And we're done! Now let's look at the commit history of `master` and `algorithm-refactor` side by side. Notice that:
+
+- The 
+
 ## Authors
 
 * **David Goldstein** - [davidcharlesgoldstein.com](http://www.davidcharlesgoldstein.com/?git-debugging-workshop)
