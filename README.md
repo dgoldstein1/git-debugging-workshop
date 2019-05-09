@@ -259,18 +259,41 @@ The two commands git gives us to update branches `git rebase` and `git merge`. B
 Start by cloning the repository:
 
 ```sh
-TODO: CLONE REPO
+git clone git@github.com:dgoldstein1/git-rebase-merge.git
 ```
 
 #### Merge
 
-According to `git --help`, the `git merge` "Join[s] two or more development histories together." In terms of our scenario, merging master into our branch would make a new commit with all the changes necessary to incorporate changes from master so that merging into master will be clean (i.e. three way merge):
+According to `git --help`, the `git merge` "Join[s] two or more development histories together." In terms of our scenario, merging master into our branch would make a new commit with all the changes necessary to incorporate changes from master so that merging into master will be clean:
 
 ![stale-branch-git-tree](images/stale-branch-mergin.png)
 
+Let's try this locally. Let's first look at our git tree. Open up the tree for master and algorithm refactor in two separate terminals so you can compare them side by side (`git log master` and `git log algorithm-refactor`). As you can see, `algorithm-refactor` has fewer commits and the two branches have diverged. This means that at some point there was a common commit between these branches, but since then both branches have gone in different directions. The most recent commit both branches share is `commit 1` *To check youngest ancestor you can also run `git merge-base algorithm-refactor master` which returns the commit hash*.
 
+Let's try and merge, with the expectation that we will have conflicts since these branches have diverged.
+
+```sh
+$ git checkout algorithm-refactor
+Auto-merging problem_1.c
+CONFLICT (content): Merge conflict in problem_1.c
+```
+
+Fix the conflicts in `problem_1.c` anyway you like. Don't worry about getting the code to run or anything, just poke around and remove the conflict messages (e.g. "<<<<<<<<" and ">>>>>>>>". If you want to make sure the code runs, make some edits then run `make`. The answer should be 233168. Once you're done, commit your results and continue the merge
+
+```sh
+$ git add problem_1.c
+$ git merge --continue
+[algorithm-refactor 115ccef] Merge branch 'master' into algorithm-refactor
+```
+
+We're done! Run `git log alorithm-refactor` and git log origin/algorithm-refactor` side by side to see the changes we made.
+- git has replayed `master` on top of `algorithm-refactor` starting with the parent of their youngest shared ancestor `commit 1`. Note that by default github and gitlab usually squash your commits automatically before merging.
+- notice that `commit 2` was appplied twice and has different commit hashes. The first one `367e909a2112725a98bad1eb1c379207eb185d96` is directly from master. The second one is a newly created commit. This is done to preserve the chronological history but also preserve the integrity of the commits on `master`. If you look at the timestamps between commit 1, rewrite algorithm, commit 2, and rewrite comments, you can see that they all go 'forward' in time. 
+- notice there is a new commit at the top `Merge branch 'master' into algorithm-refactor`. Why would you need an additional commit ontop of everything? This is where `git merge` excels. If you run `git diff HEAD~1` this will show you the changes in this new merge commit. As you can see, it's the changes we implemented to resolve merge conflicts. You can also see there is a special message `Merge: f6d88ce 27b1011` below the commit sha. This tells git how to relate these two branches. `f6d88ce` is the sha for origin/algorithim-refactor and `27b1011` is the sha for master. This way, when you end up making your pull request to merge algorithm-refactor into master, git will know automatically that it doesn't have to go further than this commit. In fact, if you run `git show $(git merge-base algorithim-refactor master)` again you will find the merge commit is the youngest ancestor.
 
 #### Rebase
+
+phew! A lot goes on behind the `git merge` command! In comparison `git rebase` is simpler but perhaps less elegant. Instead of fancy git SHA parsing and making intermediate commits, `git rebase` "Reappl[ies] commits on top of another base tip ". For our scenario, that means taking all our commits and dropping them on top of `master` like so:
 
 ## Authors
 
