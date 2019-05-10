@@ -22,9 +22,9 @@ We've all been here. It's late at night and we have a demo early in the morning.
 
 Your code haunts you in your dream that night and you realize you've made a fatal flaw in your code. You're able to get to the computer before the demo, but only have an hour and you know you can't fix the bug in that time. You know you want to 'undo' last night's merge, but how?!
 
-You go to the [github-documentation](https://help.github.com/en/articles/reverting-a-pull-request) but you realized that you can't just press the 'undo' button because there have been commits since your merge last night.
+You go to the [github-documentation](https://help.github.com/en/articles/reverting-a-pull-request) but you realized that you can't just press the 'undo' button because there have been commits since your merge last night. Oh no!!
 
-Let's start by cloning this example locally:
+Calm. Stillness. Let the git flow through you, young patawan. Let's start by cloning this project locally and take a look:
 
 ```sh
 git clone git@github.com:dgoldstein1/revert-pr.git
@@ -38,15 +38,15 @@ Take a second and think. What do we want our *end result* to look like? Simply r
 
 ![revert-bad-commit-graph](images/revert-bad-commit-graph.png)
 
-However, this is not good git. Instead of covering up bad mistakes, it's important we signal that we identified an issue temporarily solved it by reverting our code. That gives us a readable and fluid commit history. Crucially, `git` functions as a linked graph; *it almost always better to add commits rather than inserting or deleting commits.* The ideal git graph after reverting our pull request should look like this:
+However, this is not good git. Instead of covering up bad mistakes, it's important we signal that we identified an issue temporarily solved it by reverting our code. That gives us a readable and fluid commit history. It also keeps our teammates sane. Crucially, `git` functions as a linked graph; *it's almost always better to add commits rather than inserting or deleting commits.* The ideal git graph after reverting our pull request should look like this:
 
 ![revert-ideal-commit-graph](images/revert-ideal-commit-graph.png)
 
-Let's take a moment to think of what we want to do before we get to code. Remember we're not *fixing* the problem, we want to revert things back to what we had before we merged our midnight PR (the commit `wrote out main function`). Take a few minutes to play around with this on your own. Try to get your git tree to look like our ideal solution above. Note that you can visualize the current git tree with `git log --graph`.
+Let's take a moment to think of what we want to do before we get to code. Remember we're not *fixing* the problem, we want to revert things back to what we had before we merged our midnight PR (the commit `wrote out main function`). Take a few minutes to play around with this on your own. Try to get your git tree to look like our ideal solution above. Note that you can visualize the current git tree with `git log --graph` or `git log --pretty="%H %d %s"` see [this guide for more formatting options](https://devhints.io/git-log-format).
 
-When you're ready follow along with the below steps to revert our code:
+When you're ready, follow along with the below steps to revert our code:
 
- - checkout a new branch `revert midnight PR` off of `origin/master`
+ - checkout a new branch `revert-midnight-pr` off of `origin/master`
 
  ```sh
 $ git checkout -b revert-midnight-pr origin/master
@@ -102,6 +102,7 @@ $ git log --graph
 
 ...
 ```
+And that's it! Take time to understand all the steps here because every developer will be in this situation at least once. Also note that in the wild you should use gitHub or gitLab to merge back into develop instead of merging locally and pushing to master.
 
 ### Finding A Bad Commit
 
@@ -151,7 +152,7 @@ rm -f problem_14.o
 
 The answer is correct, we can see that `commit 1` is working. Now we know that our bug was created somewhere in between `commit 1` and the commit `not working`. Think for a second: how would you solve this?
 
-`git bisect` is a nice tool for piecing apart ranges of commits. It uses a binary search to locate the commit which first created your bug. Let's configure git to start bisecting:
+`git bisect` is a nice tool for piecing apart ranges of commits. It uses binary search to locate the commit which first created your bug. Let's configure git to start bisecting:
 
 
 ```sh
@@ -164,7 +165,7 @@ Bisecting: 3 revisions left to test after this (roughly 2 steps)
 [5c47d268c695c6db6669bac7f7e1ee48aaa36e0c] commit 5
 ```
 
-We're now in 'bisect' mode. We start on `commit 5` (`5c47d268c695c6db6669bac7f7e1ee48aaa36e0c`). Note that because the number of commits is known, and the search is binary, we can pre-compute the number of steps needed (i.e. `steps = ciel(ln(#commit))`) If you run `git log`, you should see that there are 5 commits between you and the initial commit. Let's continue our bisecting.
+We're now in 'bisect' mode. We start on `commit 5` (`5c47d268c695c6db6669bac7f7e1ee48aaa36e0c`) since it's in the middle of the tree. Note that because the number of commits is known, and the search is binary, we can pre-compute the number of steps needed (i.e. `steps = ciel(Logx2(#commit))`) If you run `git log`, you should see that there are 5 commits between you and the initial commit. Our maximum number of steps is `ciel(2) = 3 steps`. Let's continue our bisecting.
 
 If we run our algorithm on `commit 5` with the command `make` we can see that we still don't get the right answer (837799), so let's mark "commit 5" as bad:
 
@@ -195,7 +196,7 @@ Date:   Wed May 1 16:30:29 2019 -0400
 :100644 100644 2caec9398a44559bdb4c93007e179856f4df5331 aa30565873cf88561b53251cbf9625e63bb424b9 M	problem_14.c
 ```
 
-This tells us that `commit 4` is the first bad commit and where our bug might originate. Let's look at the difference between `commit 4` and the previous commit:
+This tells us that `commit 4` is the first bad commit and where our bug originates from. Let's look at the difference between `commit 4` and the previous commit:
 
 ```sh
 $ git diff HEAD~1 # we're currently on "commit 4", HEAD~1 refers to 1 commit behind
@@ -204,15 +205,16 @@ $ git diff HEAD~1 # we're currently on "commit 4", HEAD~1 refers to 1 commit beh
 +       for (int i = 1000000; i > 500000; i = i - 4) {
 ```
 
-We see that the only difference is we decrement our loop by 4 instead of 1. That seems like it could be an issue. On your own, checkout master an change the decrementing interval back to 1. Does it work? If so than this is our only bug, if not, there could be other bugs causing issues and we should bisect on a different range of commits.
+We see that the only difference is we decrement our loop by 4 instead of 1. That seems like it could be an issue. On your own, checkout master and change the decrementing interval back to 1. Does it work? If so than this is our only bug, if not, there could be other bugs causing issues and we should bisect on a different range of commits (fyi there aren't in this example).
 
 One nice feature of `git bisect` is that it can be automated. Here's an automated example of the sequence we just went through:
 
 ```sh
+# first create a script in the parent directory
 $ echo '#!/bin/bash
-> 
-> make problem_14
-> ./problem_14.o | grep -q "837799"' >> ../bisect_run.sh # create a script to run on each bisect
+
+make problem_14
+./problem_14.o | grep -q "837799"' >> ../bisect_run.sh # check if answer contains 837799
 $ chmod +x ../bisect_run.sh # give it permission
 $ git bisect reset # leave' bisect' mode
 $ git bisect start #initialize 'bisect' mode
@@ -244,7 +246,7 @@ bisect run success
 
 ```
 
-We end up with the same result-- that the bug originates from `commit 4`. As you can see, `git bisect run` saves more and more time as the number of commits increases. For instance, debugging 1000 commits takes only 7 maximum steps with git bisect (`ciel(ln(1000)) = 7`)
+We end up with the same result-- that the bug originates from `commit 4`. As you can see, `git bisect run` saves more and more time as the number of commits increases. For instance, debugging 1000 commits takes only 7 maximum steps with git bisect (`ciel(ln(1000)) = 10` steps)
 
 ### Updating a Stale Branch
 
@@ -252,7 +254,7 @@ Let's turn to a new scenario. Say you're working on a new algorithm refactor but
 
 ![stale-branch-git-tree](images/stale-branch-git-tree.png)
 
-Take a minute to look through this diagram and think about how you would update your branch in the *wild*. 
+Take a minute to look through this diagram and think about how you would update your branch in the wild. 
 
 The two commands git gives us to update branches `git rebase` and `git merge`. Both of these approaches will allow us to update our `algorithm-refactor` branch. Let's try both of these approaches to see the costs and benefits of each.
 
@@ -264,11 +266,11 @@ git clone git@github.com:dgoldstein1/git-rebase-merge.git
 
 #### Merge
 
-According to `git --help`, the `git merge` "Join[s] two or more development histories together." In terms of our scenario, merging master into our branch would make a new commit with all the changes necessary to incorporate changes from master so that merging into master will be clean:
+According to `git --help`, the `git merge` "Join[s] two or more development histories together." In terms of our scenario, merging master into our branch would make a new commit with all the changes necessary to incorporate changes from master:
 
 ![stale-branch-git-tree](images/stale-branch-mergin.png)
 
-Let's try this locally. Let's first look at our git tree. Open up the tree for master and algorithm refactor in two separate terminals so you can compare them side by side (`git log master` and `git log algorithm-refactor`). As you can see, `algorithm-refactor` has fewer commits and the two branches have diverged. This means that at some point there was a common commit between these branches, but since then both branches have gone in different directions. The most recent commit both branches share is `commit 1` *To check youngest ancestor you can also run `git merge-base algorithm-refactor master` which returns the commit hash*.
+Let's try this locally. Let's first look at our git tree. Open up the tree for master and algorithm refactor in two separate terminals so you can compare them side by side (`git log master` and `git log algorithm-refactor`). As you can see, `algorithm-refactor` has fewer commits and the two branches have diverged. This means that at some point there was a common commit between these branches, but since then both branches have gone in different directions. The most recent commit both branches share is `commit 1` (*To check youngest ancestor you can also run `git merge-base algorithm-refactor master` which returns the commit hash*).
 
 Let's try and merge, with the expectation that we will have conflicts since these branches have diverged.
 
@@ -278,7 +280,7 @@ Auto-merging problem_1.c
 CONFLICT (content): Merge conflict in problem_1.c
 ```
 
-Fix the conflicts in `problem_1.c` anyway you like. Don't worry about getting the code to run or anything, just poke around and remove the conflict messages (e.g. "<<<<<<<<" and ">>>>>>>>". If you want to make sure the code runs, make some edits then run `make`. The answer should be 233168. Once you're done, commit your results and continue the merge
+Fix the conflicts in `problem_1.c` anyway you like. Don't worry about getting the code to run if you don't want to, just poke around and remove the conflict messages (e.g. "<<<<<<<<" and ">>>>>>>>". If you want to get the code running, make some edits then run `make`. The answer should be 233168. Once you're done, commit your results and continue the merge
 
 ```sh
 $ git add problem_1.c
@@ -288,24 +290,24 @@ $ git merge --continue
 
 We're done! Run `git log alorithm-refactor` and git log origin/algorithm-refactor` side by side to see the changes we made.
 - git has replayed `master` on top of `algorithm-refactor` starting with the parent of their youngest shared ancestor `commit 1`. Note that by default github and gitlab usually squash your commits automatically before merging.
-- notice that `commit 2` was appplied twice and has different commit hashes. The first one `367e909a2112725a98bad1eb1c379207eb185d96` is directly from master. The second one is a newly created commit. This is done to preserve the chronological history but also preserve the integrity of the commits on `master`. If you look at the timestamps between commit 1, rewrite algorithm, commit 2, and rewrite comments, you can see that they all go 'forward' in time. 
-- notice there is a new commit at the top `Merge branch 'master' into algorithm-refactor`. Why would you need an additional commit ontop of everything? This is where `git merge` excels. If you run `git diff HEAD~1` this will show you the changes in this new merge commit. As you can see, it's the changes we implemented to resolve merge conflicts. You can also see there is a special message `Merge: f6d88ce 27b1011` below the commit sha. This tells git how to relate these two branches. `f6d88ce` is the sha for origin/algorithim-refactor and `27b1011` is the sha for master. This way, when you end up making your pull request to merge algorithm-refactor into master, git will know automatically that it doesn't have to go further than this commit. In fact, if you run `git show $(git merge-base algorithim-refactor master)` again you will find the merge commit is the youngest ancestor.
+- notice that `commit 2` was appplied twice and has different commit hashes. The first one `367e909a2112725a98bad1eb1c379207eb185d96` is directly from master. The second one is a newly created commit. This is done to preserve the chronological history and the integrity of the commits on `master`. If you look at the timestamps between commit 1, rewrite algorithm, commit 2, and rewrite comments, you can see that they all go 'forward' in time. 
+- notice there is a new commit at the top `Merge branch 'master' into algorithm-refactor`. Why would you need an additional commit on top of everything? This is where `git merge` excels. If you run `git diff HEAD~1` this will show you the changes in this new merge commit. As you can see, it's the changes we implemented to resolve merge conflicts. You can also see there is a special message `Merge: f6d88ce 27b1011` below the commit sha. This tells git how to relate these two branches. `f6d88ce` is the sha for origin/algorithim-refactor and `27b1011` is the sha for master. This way, when you end up making your pull request to merge algorithm-refactor into master, git will know automatically that it doesn't have to go further than this commit. In fact, if you run `git show $(git merge-base algorithim-refactor master)` again you will find the merge commit is the youngest ancestor.
 
-#### Rebase
+
+### Rebase
 
 phew! A lot goes on behind the `git merge` command! In comparison `git rebase` is simpler but perhaps less elegant. Instead of fancy git SHA parsing and making intermediate commits, `git rebase` "Reappl[ies] commits on top of another base tip ". For our scenario, that means taking all our commits and dropping them on top of `master` like so:
 
 ![stale-branch-rebase](images/stale-branch-rebase.png)
 
-As you can see commit 2 => the most recent commit became our 'base' ontop of the youngest common ancestory. Then our commits were reapplied. Let's try this locally:
+As you can see `commit 2` though `the most recent commit` becomes our new 'base' on top of the youngest common ancestory. Then our commits were reapplied. Let's try this locally:
 
 First let's reset our algorithm branch to how it was before we did our merge above.
 ```sh
 $ git checkout algorithm-refactor
 $ git reset --hard origin/algorithm-refactor
-
 ```
-Now let's try rebasing instead of merging.
+Now let's rebase.
 ```sh
 $ git checkout algorithm-refactor
 $ git rebase master
@@ -318,7 +320,17 @@ Applying: rewrite comments
 
 And we're done! Now let's look at the commit history of `master` and `algorithm-refactor` side by side. Notice that:
 
-- The 
+- We had to do two conflict resolutions instead of one for the merge. Merging will always be a maximum of one conflict resolution step while rebasing will be a maximum of the number of commits you've made off of the base.
+- The commit hashes are the same as `master`. This is *crucial* and simplifies our life a lot. We and git now know that these are the same commits and there is now a clear common base.
+- The commit hashes for the algorithm-refactor branch are now different (e.g. `rewrite algorithm` and `rewrite comments`). Why? Because rebasing them to fit the shape of `master` fundementally changes what these commits look like.
+
+### Opinion Alert!
+
+Here's where I give you the magic "rule of thumb" which is all you will remember when you're working on your project. But most importantly: understand and *think* about what you're doing with git before you do it. Try to understand git instead of passively moving through a workflow.
+
+- Rebasing best for keeping secondary branches (i.e. not `develop` or `master`) up to date, since the commits from the base branch is preserved.
+- Merging is good for taking secondary branches (i.e. `feature/`) and putting them back in a main branch
+- Squashing a merge commit removes the labels git relies on to find common ancestory.
 
 ## Authors
 
